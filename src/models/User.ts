@@ -1,6 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
-
-export interface IUser extends Document {
+// Simplified User model for browser environment
+export interface IUser {
   uid: string;
   email: string;
   displayName: string;
@@ -9,18 +8,21 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
-const UserSchema: Schema = new Schema({
-  uid: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  displayName: { type: String, required: true },
-  photoURL: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-}, {
-  timestamps: true
-});
-
-// Check if the model already exists to prevent overwriting
-const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+// Create a mock User model for browser environment
+const User = {
+  // Mock methods that would normally interact with MongoDB
+  findOne: async (query: any) => {
+    console.log('Mock User.findOne called with:', query);
+    return null;
+  },
+  findOneAndUpdate: async (query: any, update: any, options: any) => {
+    console.log('Mock User.findOneAndUpdate called with:', query, update, options);
+    return null;
+  },
+  deleteOne: async (query: any) => {
+    console.log('Mock User.deleteOne called with:', query);
+    return { deletedCount: 1 };
+  }
+};
 
 export default User;

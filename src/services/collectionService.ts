@@ -1,16 +1,6 @@
-import clientPromise from '../lib/mongodb';
-import Collection from '../models/Collection';
-import Content from '../models/Content';
-import mongoose from 'mongoose';
+import axios from 'axios';
 
-// Connect to MongoDB
-const connectDB = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    const client = await clientPromise;
-    const db = client.db();
-    return db;
-  }
-};
+const API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Creates a new collection
@@ -27,14 +17,13 @@ export const createCollection = async (collectionData: {
   accessLimit?: number;
   isPublished?: boolean;
 }) => {
-  await connectDB();
-  
-  const newCollection = new Collection({
-    ...collectionData,
-    isPublished: collectionData.isPublished || false
-  });
-  
-  return await newCollection.save();
+  try {
+    const response = await axios.post(`${API_URL}/collections`, collectionData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating collection:', error);
+    throw error;
+  }
 };
 
 /**
@@ -43,8 +32,13 @@ export const createCollection = async (collectionData: {
  * @returns {Promise<Array>} - Array of collections
  */
 export const getCollectionsByUserId = async (userId: string) => {
-  await connectDB();
-  return await Collection.find({ userId }).sort({ createdAt: -1 });
+  try {
+    const response = await axios.get(`${API_URL}/collections/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting collections:', error);
+    throw error;
+  }
 };
 
 /**
@@ -53,8 +47,16 @@ export const getCollectionsByUserId = async (userId: string) => {
  * @returns {Promise<Object|null>} - The collection or null if not found
  */
 export const getCollectionById = async (id: string) => {
-  await connectDB();
-  return await Collection.findById(id);
+  try {
+    const response = await axios.get(`${API_URL}/collections/${id}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    console.error('Error getting collection:', error);
+    throw error;
+  }
 };
 
 /**
@@ -72,12 +74,13 @@ export const updateCollection = async (id: string, updateData: {
   accessLimit?: number;
   isPublished?: boolean;
 }) => {
-  await connectDB();
-  return await Collection.findByIdAndUpdate(
-    id,
-    { ...updateData, updatedAt: new Date() },
-    { new: true }
-  );
+  try {
+    const response = await axios.put(`${API_URL}/collections/${id}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating collection:', error);
+    throw error;
+  }
 };
 
 /**
@@ -86,14 +89,13 @@ export const updateCollection = async (id: string, updateData: {
  * @returns {Promise<boolean>} - True if deleted, false if not found
  */
 export const deleteCollection = async (id: string) => {
-  await connectDB();
-  
-  // Delete all content in the collection
-  await Content.deleteMany({ collectionId: id });
-  
-  // Delete the collection
-  const result = await Collection.deleteOne({ _id: id });
-  return result.deletedCount > 0;
+  try {
+    const response = await axios.delete(`${API_URL}/collections/${id}`);
+    return response.data.success;
+  } catch (error) {
+    console.error('Error deleting collection:', error);
+    throw error;
+  }
 };
 
 /**
@@ -102,10 +104,13 @@ export const deleteCollection = async (id: string) => {
  * @returns {Promise<Array>} - Array of published collections
  */
 export const getPublishedCollections = async (limit = 10) => {
-  await connectDB();
-  return await Collection.find({ isPublished: true })
-    .sort({ createdAt: -1 })
-    .limit(limit);
+  try {
+    const response = await axios.get(`${API_URL}/collections/published?limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting published collections:', error);
+    throw error;
+  }
 };
 
 export default {

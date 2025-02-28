@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
-
-export interface IContent extends Document {
+// Simplified Content model for browser environment
+export interface IContent {
+  _id?: string;
   title: string;
   description?: string;
   fileUrl: string;
@@ -12,25 +12,33 @@ export interface IContent extends Document {
   updatedAt: Date;
 }
 
-const ContentSchema: Schema = new Schema({
-  title: { type: String, required: true },
-  description: { type: String },
-  fileUrl: { type: String, required: true },
-  fileType: { 
-    type: String, 
-    required: true, 
-    enum: ['image', 'video', 'pdf', 'audio', 'other'] 
+// Create a mock Content model for browser environment
+const Content = {
+  // Mock methods that would normally interact with MongoDB
+  find: async (query: any) => {
+    console.log('Mock Content.find called with:', query);
+    return [];
   },
-  collectionId: { type: Schema.Types.ObjectId, ref: 'Collection', required: true },
-  userId: { type: String, required: true },
-  order: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-}, {
-  timestamps: true
-});
-
-// Check if the model already exists to prevent overwriting
-const Content = mongoose.models.Content || mongoose.model<IContent>('Content', ContentSchema);
+  findOne: async (query: any) => {
+    console.log('Mock Content.findOne called with:', query);
+    return null;
+  },
+  findById: async (id: string) => {
+    console.log('Mock Content.findById called with:', id);
+    return null;
+  },
+  findByIdAndUpdate: async (id: string, update: any, options: any) => {
+    console.log('Mock Content.findByIdAndUpdate called with:', id, update, options);
+    return null;
+  },
+  deleteOne: async (query: any) => {
+    console.log('Mock Content.deleteOne called with:', query);
+    return { deletedCount: 1 };
+  },
+  deleteMany: async (query: any) => {
+    console.log('Mock Content.deleteMany called with:', query);
+    return { deletedCount: 1 };
+  }
+};
 
 export default Content;

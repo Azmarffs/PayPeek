@@ -57,7 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           }
         } catch (error) {
-          console.error('Error checking/creating user in MongoDB:', error);
+          console.error('Error checking/creating user in database:', error);
+          // Continue even if there's an error with the database
+          // This allows users to still use the app even if the backend is down
         }
       }
       
@@ -101,13 +103,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           displayName: displayName
         });
         
-        // Create user in MongoDB
-        await createUser({
-          uid: userCredential.user.uid,
-          email: userCredential.user.email || '',
-          displayName: displayName,
-          photoURL: userCredential.user.photoURL || undefined
-        });
+        try {
+          // Create user in database
+          await createUser({
+            uid: userCredential.user.uid,
+            email: userCredential.user.email || '',
+            displayName: displayName,
+            photoURL: userCredential.user.photoURL || undefined
+          });
+        } catch (error) {
+          console.error('Error creating user in database:', error);
+          // Continue even if there's an error with the database
+        }
       }
       
       toast.success('Account created successfully!');
@@ -134,17 +141,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
       
-      // Check if user exists in MongoDB
-      const dbUser = await getUserByUid(result.user.uid);
-      
-      // If user doesn't exist in MongoDB, create them
-      if (!dbUser) {
-        await createUser({
-          uid: result.user.uid,
-          email: result.user.email || '',
-          displayName: result.user.displayName || 'User',
-          photoURL: result.user.photoURL || undefined
-        });
+      try {
+        // Check if user exists in database
+        const dbUser = await getUserByUid(result.user.uid);
+        
+        // If user doesn't exist in database, create them
+        if (!dbUser) {
+          await createUser({
+            uid: result.user.uid,
+            email: result.user.email || '',
+            displayName: result.user.displayName || 'User',
+            photoURL: result.user.photoURL || undefined
+          });
+        }
+      } catch (error) {
+        console.error('Error checking/creating user in database:', error);
+        // Continue even if there's an error with the database
       }
       
       toast.success('Successfully signed in with Google!');
@@ -201,8 +213,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       await updateProfile(currentUser, updateData);
       
-      // Update user in MongoDB
-      await updateUser(currentUser.uid, updateData);
+      try {
+        // Update user in database
+        await updateUser(currentUser.uid, updateData);
+      } catch (error) {
+        console.error('Error updating user in database:', error);
+        // Continue even if there's an error with the database
+      }
       
       toast.success('Profile updated successfully');
     } catch (error) {

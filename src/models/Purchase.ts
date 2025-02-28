@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
-
-export interface IPurchase extends Document {
+// Simplified Purchase model for browser environment
+export interface IPurchase {
+  _id?: string;
   userId: string;
   collectionId: string;
   amount: number;
@@ -13,27 +13,29 @@ export interface IPurchase extends Document {
   updatedAt: Date;
 }
 
-const PurchaseSchema: Schema = new Schema({
-  userId: { type: String, required: true },
-  collectionId: { type: Schema.Types.ObjectId, ref: 'Collection', required: true },
-  amount: { type: Number, required: true },
-  paymentMethod: { type: String, required: true },
-  paymentId: { type: String, required: true },
-  accessExpires: { type: Date },
-  viewsRemaining: { type: Number },
-  status: { 
-    type: String, 
-    required: true, 
-    enum: ['pending', 'completed', 'failed', 'refunded'],
-    default: 'pending'
+// Create a mock Purchase model for browser environment
+const Purchase = {
+  // Mock methods that would normally interact with MongoDB
+  find: async (query: any) => {
+    console.log('Mock Purchase.find called with:', query);
+    return [];
   },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-}, {
-  timestamps: true
-});
-
-// Check if the model already exists to prevent overwriting
-const Purchase = mongoose.models.Purchase || mongoose.model<IPurchase>('Purchase', PurchaseSchema);
+  findOne: async (query: any) => {
+    console.log('Mock Purchase.findOne called with:', query);
+    return null;
+  },
+  findById: async (id: string) => {
+    console.log('Mock Purchase.findById called with:', id);
+    return null;
+  },
+  findByIdAndUpdate: async (id: string, update: any, options: any) => {
+    console.log('Mock Purchase.findByIdAndUpdate called with:', id, update, options);
+    return null;
+  },
+  deleteOne: async (query: any) => {
+    console.log('Mock Purchase.deleteOne called with:', query);
+    return { deletedCount: 1 };
+  }
+};
 
 export default Purchase;

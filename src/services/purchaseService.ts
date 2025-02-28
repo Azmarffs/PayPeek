@@ -1,16 +1,6 @@
-import clientPromise from '../lib/mongodb';
-import Purchase from '../models/Purchase';
-import Collection from '../models/Collection';
-import mongoose from 'mongoose';
+import axios from 'axios';
 
-// Connect to MongoDB
-const connectDB = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    const client = await clientPromise;
-    const db = client.db();
-    return db;
-  }
-};
+const API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Creates a new purchase
@@ -25,36 +15,13 @@ export const createPurchase = async (purchaseData: {
   paymentId: string;
   status?: 'pending' | 'completed' | 'failed' | 'refunded';
 }) => {
-  await connectDB();
-  
-  // Get the collection to determine access type and limits
-  const collection = await Collection.findById(purchaseData.collectionId);
-  
-  if (!collection) {
-    throw new Error('Collection not found');
+  try {
+    const response = await axios.post(`${API_URL}/purchases`, purchaseData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating purchase:', error);
+    throw error;
   }
-  
-  let accessExpires = undefined;
-  let viewsRemaining = undefined;
-  
-  // Set access limits based on collection type
-  if (collection.accessType === 'time-based' && collection.accessLimit) {
-    // Calculate expiration date (accessLimit is in days)
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + collection.accessLimit);
-    accessExpires = expirationDate;
-  } else if (collection.accessType === 'view-based' && collection.accessLimit) {
-    viewsRemaining = collection.accessLimit;
-  }
-  
-  const newPurchase = new Purchase({
-    ...purchaseData,
-    accessExpires,
-    viewsRemaining,
-    status: purchaseData.status || 'pending'
-  });
-  
-  return await newPurchase.save();
 };
 
 /**
@@ -63,10 +30,13 @@ export const createPurchase = async (purchaseData: {
  * @returns {Promise<Array>} - Array of purchases
  */
 export const getPurchasesByUserId = async (userId: string) => {
-  await connectDB();
-  return await Purchase.find({ userId, status: 'completed' })
-    .sort({ createdAt: -1 })
-    .populate('collectionId');
+  try {
+    const response = await axios.get(`${API_URL}/purchases/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting purchases:', error);
+    throw error;
+  }
 };
 
 /**
@@ -76,29 +46,15 @@ export const getPurchasesByUserId = async (userId: string) => {
  * @returns {Promise<boolean>} - True if user has access
  */
 export const hasAccessToCollection = async (userId: string, collectionId: string) => {
-  await connectDB();
-  
-  const purchase = await Purchase.findOne({
-    userId,
-    collectionId,
-    status: 'completed'
-  });
-  
-  if (!purchase) {
-    return false;
+  try {
+    const response = await axios.get(`${API_URL}/purchases/access`, {
+      params: { userId, collectionId }
+    });
+    return response.data.hasAccess;
+  } catch (error) {
+    console.error('Error checking access:', error);
+    throw error;
   }
-  
-  // Check if access has expired for time-based collections
-  if (purchase.accessExpires && new Date() > purchase.accessExpires) {
-    return false;
-  }
-  
-  // Check if views are remaining for view-based collections
-  if (purchase.viewsRemaining !== undefined && purchase.viewsRemaining <= 0) {
-    return false;
-  }
-  
-  return true;
 };
 
 /**
@@ -108,24 +64,16 @@ export const hasAccessToCollection = async (userId: string, collectionId: string
  * @returns {Promise<number|null>} - Remaining views or null if not applicable
  */
 export const decrementRemainingViews = async (userId: string, collectionId: string) => {
-  await connectDB();
-  
-  const purchase = await Purchase.findOne({
-    userId,
-    collectionId,
-    status: 'completed'
-  });
-  
-  if (!purchase || purchase.viewsRemaining === undefined) {
-    return null;
+  try {
+    const response = await axios.post(`${API_URL}/purchases/decrement-views`, {
+      userId,
+      collectionId
+    });
+    return response.data.viewsRemaining;
+  } catch (error) {
+    console.error('Error decrementing views:', error);
+    throw error;
   }
-  
-  if (purchase.viewsRemaining > 0) {
-    purchase.viewsRemaining -= 1;
-    await purchase.save();
-  }
-  
-  return purchase.viewsRemaining;
 };
 
 /**
@@ -135,12 +83,13 @@ export const decrementRemainingViews = async (userId: string, collectionId: stri
  * @returns {Promise<Object|null>} - The updated purchase or null if not found
  */
 export const updatePurchaseStatus = async (id: string, status: 'pending' | 'completed' | 'failed' | 'refunded') => {
-  await connectDB();
-  return await Purchase.findByIdAndUpdate(
-    id,
-    { status, updatedAt: new Date() },
-    { new: true }
-  );
+  try {
+    const response = await axios.put(`${API_URL}/purchases/${id}/status`, { status });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating purchase status:', error);
+    throw error;
+  }
 };
 
 export default {

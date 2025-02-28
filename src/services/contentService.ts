@@ -1,15 +1,6 @@
-import clientPromise from '../lib/mongodb';
-import Content from '../models/Content';
-import mongoose from 'mongoose';
+import axios from 'axios';
 
-// Connect to MongoDB
-const connectDB = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    const client = await clientPromise;
-    const db = client.db();
-    return db;
-  }
-};
+const API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Creates new content
@@ -25,21 +16,13 @@ export const createContent = async (contentData: {
   userId: string;
   order?: number;
 }) => {
-  await connectDB();
-  
-  // Get the highest order in the collection
-  const highestOrder = await Content.findOne({ collectionId: contentData.collectionId })
-    .sort({ order: -1 })
-    .select('order');
-  
-  const newOrder = highestOrder ? highestOrder.order + 1 : 0;
-  
-  const newContent = new Content({
-    ...contentData,
-    order: contentData.order !== undefined ? contentData.order : newOrder
-  });
-  
-  return await newContent.save();
+  try {
+    const response = await axios.post(`${API_URL}/contents`, contentData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating content:', error);
+    throw error;
+  }
 };
 
 /**
@@ -48,8 +31,13 @@ export const createContent = async (contentData: {
  * @returns {Promise<Array>} - Array of content
  */
 export const getContentByCollectionId = async (collectionId: string) => {
-  await connectDB();
-  return await Content.find({ collectionId }).sort({ order: 1 });
+  try {
+    const response = await axios.get(`${API_URL}/contents/collection/${collectionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting content:', error);
+    throw error;
+  }
 };
 
 /**
@@ -58,8 +46,16 @@ export const getContentByCollectionId = async (collectionId: string) => {
  * @returns {Promise<Object|null>} - The content or null if not found
  */
 export const getContentById = async (id: string) => {
-  await connectDB();
-  return await Content.findById(id);
+  try {
+    const response = await axios.get(`${API_URL}/contents/${id}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    console.error('Error getting content:', error);
+    throw error;
+  }
 };
 
 /**
@@ -75,12 +71,13 @@ export const updateContent = async (id: string, updateData: {
   fileType?: 'image' | 'video' | 'pdf' | 'audio' | 'other';
   order?: number;
 }) => {
-  await connectDB();
-  return await Content.findByIdAndUpdate(
-    id,
-    { ...updateData, updatedAt: new Date() },
-    { new: true }
-  );
+  try {
+    const response = await axios.put(`${API_URL}/contents/${id}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating content:', error);
+    throw error;
+  }
 };
 
 /**
@@ -89,9 +86,13 @@ export const updateContent = async (id: string, updateData: {
  * @returns {Promise<boolean>} - True if deleted, false if not found
  */
 export const deleteContent = async (id: string) => {
-  await connectDB();
-  const result = await Content.deleteOne({ _id: id });
-  return result.deletedCount > 0;
+  try {
+    const response = await axios.delete(`${API_URL}/contents/${id}`);
+    return response.data.success;
+  } catch (error) {
+    console.error('Error deleting content:', error);
+    throw error;
+  }
 };
 
 /**
@@ -101,14 +102,16 @@ export const deleteContent = async (id: string) => {
  * @returns {Promise<boolean>} - True if successful
  */
 export const reorderContent = async (collectionId: string, contentOrder: string[]) => {
-  await connectDB();
-  
-  const updatePromises = contentOrder.map((contentId, index) => {
-    return Content.findByIdAndUpdate(contentId, { order: index });
-  });
-  
-  await Promise.all(updatePromises);
-  return true;
+  try {
+    const response = await axios.put(`${API_URL}/contents/reorder`, {
+      collectionId,
+      contentOrder
+    });
+    return response.data.success;
+  } catch (error) {
+    console.error('Error reordering content:', error);
+    throw error;
+  }
 };
 
 export default {
