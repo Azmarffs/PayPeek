@@ -139,7 +139,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
+      console.log('Attempting to sign in with Google...');
+      
+      // Check if Firebase is properly initialized
+      if (!auth) {
+        console.error('Firebase auth is not initialized');
+        throw new Error('Authentication service is not available');
+      }
+      
+      if (!googleProvider) {
+        console.error('Google provider is not initialized');
+        throw new Error('Google authentication is not available');
+      }
+      
+      // Clear any previous errors
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('Google sign-in successful:', result.user);
       
       try {
         // Check if user exists in database
@@ -161,12 +176,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast.success('Successfully signed in with Google!');
     } catch (error: any) {
+      console.error('Google sign-in error:', error);
       let errorMessage = 'Failed to sign in with Google';
       
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed';
       } else if (error.code === 'auth/cancelled-popup-request') {
         errorMessage = 'Sign-in was cancelled';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Sign-in popup was blocked by the browser';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for OAuth operations';
+      } else if (error.code === 'auth/configuration-not-found') {
+        errorMessage = 'Firebase configuration is missing or invalid';
       }
       
       toast.error(errorMessage);

@@ -38,10 +38,13 @@ const SignIn: React.FC = () => {
   const handleGoogleSignIn = async () => {
     try {
       setIsSubmitting(true);
+      setError('');
+      console.log('Google sign-in button clicked');
       await signInWithGoogle();
       navigate(from, { replace: true });
-    } catch (err) {
-      // Error is handled in the AuthContext
+    } catch (err: any) {
+      console.error('Error in handleGoogleSignIn:', err);
+      setError(err.message || 'Failed to sign in with Google');
       setIsSubmitting(false);
     }
   };
@@ -175,6 +178,7 @@ const SignIn: React.FC = () => {
 
           <div className="mt-6">
             <button
+              type="button"
               onClick={handleGoogleSignIn}
               disabled={isSubmitting}
               className="w-full flex justify-center items-center px-4 py-3 border border-white/20 rounded-md shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
