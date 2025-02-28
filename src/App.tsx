@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-<<<<<<< HEAD
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LandingPage from './pages/LandingPage/LandingPage';
@@ -10,10 +9,6 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthNavbar from './components/AuthNavbar';
-=======
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import LandingPage from './pages/LandingPage/LandingPage';
->>>>>>> 65b3786edcbfb368d335aac1a6a0de02646f35b4
 
 function App() {
   // Smooth scroll behavior for anchor links
@@ -39,7 +34,6 @@ function App() {
   }, []);
 
   return (
-<<<<<<< HEAD
     <AuthProvider>
       <Router>
         <AuthNavbar />
@@ -84,13 +78,6 @@ function App() {
         </Routes>
       </Router>
     </AuthProvider>
-=======
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-      </Routes>
-    </Router>
->>>>>>> 65b3786edcbfb368d335aac1a6a0de02646f35b4
   );
 }
 
